@@ -1,0 +1,73 @@
+query1: 2.36s
+query2: 4.66s
+query3: 4.18s
+
+[1] Keep the Azure portal open
+
+Hello and welcome to this talk on migrating data from AWS Redshift to Azure SQL Data Warehouse. Before we get into the nitty-gritty of the data migration, let me take a few seconds to explain what we'll cover today, and also what we won't.
+
+A data migration project can be grouped into 5 phases. The first thing you have to do is migrate the schema. Fortunately there is a lot of overlap between the Redshift DDL and SQL DW DDL. But there are certain important differences too which we'll go over. The second and third phases are migrating the actual data and tuning some representitive queries. While doing this we might discover that we need to change the schema, add some constraints, remove some others. But by the end of this phase our data is in SQL DW and we are happy with the performance of our representitive queries. The fourth phase is migrating the application code. You might have a Python app reading data from Redshift using its ODBC driver. In theory you'd have to swap Redshift's ODBC driver with the one from SQL DW and your app should work as-is. However, there might be some cases where you are using some non-standard Redshift specific feature that was exposed via its ODBC driver. Now you'll have to find its equivalent in SQL DW. This might involve some application re-write. Finally you'll have to migrate any 3rd party BI tools like Qlik, <>, etc. Most vendors claim that this migration is seamless. O f course there are no clear boundaries between these phases and you would typically jump from one phase to the next and back again quite a few times before you are done. In this talk I'll cover the first three phases.
+
+You are welcome to just watch. All the code used here is available on bitbucket under the MIT license - which means you are free to do whatever you want with it. But if you do want to follow along then you'll need a pre-existing Redshift cluster. You can find instructions on how to create one in the bitbucket repo. You'll also need to provision a VM in Azure. We'll create a Windows VM and install the following tools - 7Zip. This is need ed to unzip gzip files which Redshift will create by default. Cloudberry manager for both AWS and Azure. This is needed to download data from S3 and upload it to Blob storage. SQL Workbench. This is needed to run queries on Redshift. You can also use any other SQL browser. SQL Worbench needs JDK 1.8 and the Redshift JDBC driver. And finally SQL Management Studio to run queries against SQL DW. So lets go ahead and provision our VM.
+
+[1] Create a new VM in the portal
+[2] Copy the installables to the VM
+[3] Install everything
+
+We'll pretend to be a fictitious video game fan site. Users of this website visit various webpages. Visits to pages with game details on them have been captured in our data warehouse. This is a pretty typical scenario, where an ETL job - running nightly - would parse and load the application logs into the data warehouse. Data in a data warehouse usually follows the STAR schema as opposed to the 3rd normal form of OLTP RDBMS. Our web page visit data is also stored in the STAR schema. We also make heavy use of the bridge pattern for modelling many-to-many relationships. If you are not familiar with these terms don't worry. We'll look at enough actual data for you to follow along.
+
+So here is our schema. Visit table is the Fact table. Two of its dimensions - users and games are easy to follow. Our website has a bunch of users and we have content for a bunch of video games. Lets see what this data looks like.
+
+[1] Open users.xlsx
+[2] Open games.xlsx
+
+In a single session a user visits multiple pages. And in their lifetime, users would have multiple sessions. Notice, how in 3rd normal form users would be related to sessions, which in turn would be related to visits. But we have de-normalized users to be directly related to visits. Lets see what this data looks like.
+
+[1] Open sessions.xlsx
+[2] Open visits.xlsx
+
+Now a game can be available on multiple platforms, and a platform can have multiple games. Similarly for genres, publishers, developers. These are many-to-many relationships.
+
+[1] Open games.xlsx
+
+Lets take GTA - San Andreas, it is available on both XBox and Playstation 2. So we create a group of platforms - group number 17 - that contains these two platforms. And set the platform group of GTA - San Andreas to 17. This is a simplified bridge pattern. Again, we de-normalize our data and the groups are now directly related to visits.
+
+Lets see how big is our data.
+
+[1] Run count queries on SQL Workbench.
+
+Ok, so we have a million users with 10 million sessions and a total of 95 million visits between them. We have content for 10 thousand games. Here are some representative queries that our business analyst runs from time to time -
+	- which are the most popular platforms from amongst Xbox, Nintendo, PS, etc?
+	- Which are the most popular games on the Xbox family of platforms?
+	- Who are the users browsing Xbox games from a windows PC?
+Lets run these queries.
+
+[1] Run the queries and note the timing
+
+Now lets start with schema migration. When creating your Redshift schema you probably specified primary keys and foreign keys. Redshift uses this for query optimization but it does not actually enforce any referential integrity on the data. In SQL DW, you cannot specify these constraints to begin with. Their query optimizer does not need this additional bit of information. Data types translation is pretty strightforward. You can find Redshift and SQL DW data types in their respective documentation. In our schema, the only data type we need to change is from timestamp to datetime. The third concept to note is that of data distribution. Data in a data warehouse is usually spread out over a cluster of nodes. Getting the number of distributions in Redshift is pretty straightforward, its simply the number of nodes times the number of slices per node. In Azure, the number of distributions has been abstracted out under the concept of DDWs. As data warehouse users we should not have to worry about the exact number of distributions in our clusters. However, as the data owners, we are the best people to know how to distribute our data. The goal of data distribution is to minimize data transfer amongst the nodes - especially when doing join queries. Redshift has 3 distribution styles - key, even, and all. Key or its Azure counterpart Hash - as the name implies - hashes a specific key in the row to a bucket, and all the rows that hash to the same bucket are stored together. So if we are joining two big tables in one of our queries - say visits and sessions, it makes sense to hash by the session_id. Even or its Azure counterpart round robin - again as the name implies - simply distributes the rows one-by-one to each node. Redshift has a third distribution style - all in which it copies the entire table on to each node. This is usually done for smaller tables - like our platforms, developers, etc. There is no Azure counterpart here. As we'll see later, it is not really needed. The final concept we need to understand is that of data arrangement. Redshift has a notion of sort key, where, once rows have been distributed amongst various nodes, data on each node is sorted based on some key. Azure has no such concept. On Azure we have the concept of data partitions. Even though I am mentioning both sorting and partitioning in the same slide - these are not equivalent concepts. Partition decides how data on a single disk is physically grouped together. If you have queries that filtering on a specific key, setting it up as a sort key or finding partitions in that key is a good idea. While setting up a sort key for all tables is good idea, you want to set up partitions only for tables with large number - say 100 thousand rows. Otherwise, all the data in the node might as well live in a single file on the disk.
+
+Armed with this knowledge, let us migrate the schema of our data. First off, lets take the DDL for the redshift cluster.
+
+[1] Load the redshift create.sql
+
+In case you don't have the original DDL script, you can generate it from Redshift by running this command. We will not do that.Now lets get rid of all the key constraints. 
+
+[2] Delete key constraints.
+
+Now lets change the data types. Only one in our schema.
+
+[3] Change timestamp to datetime
+
+Lets set the data distribution.
+
+[4] Change distkeys
+
+And finally data arrangements.
+
+[5] Change sortkeys
+
+Thats it our create script is ready. Lets first provision a SQL DW from the Azure portal.
+
+[1] Create a data warehouse
+
+

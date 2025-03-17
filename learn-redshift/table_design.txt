@@ -1,0 +1,41 @@
+How to select a sort key?
+-------------------------
+Overall objective is to reduce query time.
+1. Get all the queries (including join queries) that this table is part of.
+2. Get all the columns that act as filters in the above queries.
+3. Set the most frequent filter column as the sort key.
+4. Get all the columns that act as join columns in the above queries.
+5. Set the most frequent join column as the sort key.
+6. Set the primary key as the sort key.
+
+How to select dist style?
+-------------------------
+Overall objective is to reduce data movement across distributions.
+1. List all the tables that pariticipate in join queries.
+2. Get the table with most foreign keys from this list. Lets call this table the fact table.
+3. Choose the foreign key that joins to the largest joined table. Lets call this table the dimension table. The size should be considered after any filters are applied on the join table.
+4. This foreign key of the fact table and the primary key of the dimension table are then chosen as the hash distribution keys for their respective tables.
+5. Consider if the other dimension tables can be distributed with the ALL strategy.
+6. Repeat steps 1-5 until there are no more fact tables.
+7. Choose even distribution for any tables that do not have an explicit hash or ALL distribution strategy by now.
+
+DS_BCAST_INNER: A copy of the entire inner table is broadcast to all compute nodes.
+Worst possible distribution. If the inner table is small enough it should be distributed using the ALL strategy at schema creation time.
+
+DS_DIST_BOTH: Both tables are redistributed.
+Bad. Need to spend some time thinking about which keys to use as dist keys on both tables. Or if using ALL distribution strategy on the inner table is a possibility.
+
+DS_DIST_ALL_INNER: The entire inner table is redistributed to a single slice because the outer table uses DISTSTYLE ALL.
+Not good. Your brute-force ALL distribution strategy on the outer table is back-firing.
+
+DS_DIST_INNER: The inner table is redistributed.
+Ok. Need to spend some time thinking about which key to use as dist key on the inner table. Or see if using ALL distribution staregy on the inner table is a possibility.
+
+DS_DIST_ALL_NONE: No redistribution is required, because the inner table has already been distributed to every node using DISTSTYLE ALL.
+Good. Your brute-force ALL distribution strategy is working.
+
+DS_DIST_NONE: No tables are redistributed. Collocated joins are possible because corresponding slices are joined without moving data between nodes.
+Best. You have used dist keys very cleverly.
+
+
+

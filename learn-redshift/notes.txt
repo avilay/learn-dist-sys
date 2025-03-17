@@ -1,0 +1,184 @@
+VISITS_FACT
+visit_id, session_id, user_id, game_id, genre_grp_id, pub_grp_id, plat_grp_id, start_time, dur_secs
+
+DIM_GAME
+game_id, name
+
+DIM_GENRE
+genre_id, name
+
+GENRE_GRP
+genre_grp_id, genre_id, weightage
+
+DIM_PLAT
+plat_id, name
+
+PLAT_GRP
+plat_grp_id, plat_id, weightage
+
+DIM_PUB
+pub_id, name
+
+PUB_GRP
+pub_grp_id, pub_id, weightage
+
+DIM_SESSION
+session_id, os, browser, created_at
+
+DIM_USER
+user_id, name, email, created_at
+
+
+users
+-----
+filter key: n/a
+join key: user_id [sortkey] [distkey]
+
+platforms
+---------
+filter keys: name [sortkey]
+join keys: platform_id [*distkey]
+[distall]
+
+plats_grp
+---------
+filter keys:
+join keys: plat_grp_id, platform_id [*distkey]
+[distall]
+
+genres
+------
+filter keys:
+join keys: genre_id [*distkey]
+[distall]
+
+genres_grp
+----------
+filter keys:
+join keys: genre_grp_id, genre_id [*distkey]
+[distall]
+
+developers
+----------
+filter keys:
+join keys:
+developer_id [*distkey]
+[distall]
+
+devs_grp
+--------
+filter keys:
+join keys:
+developer_id [*distkey]
+[distall]
+
+publishers
+----------
+filter keys:
+join keys:
+publisher_id [*distkey]
+[distall]
+
+pubs_grp
+--------
+filter keys:
+join keys:
+publisher_id [*distkey]
+[distall]
+
+games
+-----
+filter keys:
+join keys:
+[even]
+
+sessions
+--------
+filter keys: s.os_platform [sortkey]
+join keys: s.session_id [distkey]
+
+visits
+------
+filter keys: 
+join keys: plat_grp_id, genre_grp_id, user_id, session_id [distkey], plat_grp_id
+
+
+
+No filters - just groupings
+Most popular os
+select s.os_platform, count(v.visit_id)
+from visits v, sessions s
+where v.session_id = s.session_id
+group by s.os_platform
+order by count(v.visit_id) desc;
+>>> 0.13 secs
+>>> sessions table is broadcast
+
+Filter on a single dim
+Which genres are most popular on the xbox platform
+select g.name, count(v.visit_id)
+from visits v, plats_grp pg, platforms p, genres_grp gg, genres g
+where v.plat_grp_id = pg.plat_grp_id
+and pg.platform_id = p.platform_id
+and v.genre_grp_id = gg.genre_grp_id
+and gg.genre_id = g.genre_id
+and p.name in ('Xbox', 'Xbox One', 'Xbox 360', 'Xbox Kinect')
+group by g.name
+order by count(v.visit_id) desc;
+>>> 0.24 secs
+>>> platforms table is broadcast, plats_grp-platforms is broadcast, genres_grp is broacast, genres is broadcast
+
+Filter on multiple dims
+All users who were browsing xbox games from a windows computer
+select distinct(u.name)
+from users u, visits v, sessions s, plats_grp pg, platforms p
+where v.user_id = u.user_id
+and v.session_id = s.session_id
+and v.plat_grp_id = pg.plat_grp_id
+and pg.platform_id = p.platform_id
+and s.os_platform = 'windows'
+and p.name in ('Xbox', 'Xbox One', 'Xbox 360', 'Xbox Kinect')
+>> 0.25 secs
+>> 4 joins with platforms, plats_grp-platforms, sessions, users all being broadcasted
+
+visit_id: v1
+genre_grp_id: gg1
+
+visit_id: v2
+genre_grp_id: gg2
+
+visit_id: v3
+genre_grp_id: gg1
+
+
+genre_grp_id: gg1
+genre_id: n1
+
+genre_grp_id: gg1
+genre_id: n2
+
+genre_grp_id: gg2
+genre_id: n2
+
+
+n1, v1
+n2, v1
+n2, v2
+n1, v3
+n2, v3
+
+n1, 2
+n2, 3
+
+
+
+
+PURCHASE_FACT
+purchse_id, user_id, game_id, genre_grp_id, pub_grp_id, plat_grp_id, start_time, qty, price
+
+
+select gg.game_id, gg.genre_id
+from games_genres gg
+where gg.game_id = 1
+
+select 
