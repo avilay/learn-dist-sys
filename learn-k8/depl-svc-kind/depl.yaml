@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloweb-depl
+  namespace: learn-k8
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      workload: helloweb
+  template:
+    metadata:
+      labels:
+        workload: helloweb
+    spec:
+      containers:
+        - image: avilay/helloweb:latest
+          name: helloweb-cont
+          command: ["python", "-m", "http.server", "6006"]
+          ports:
+            - containerPort: 6006

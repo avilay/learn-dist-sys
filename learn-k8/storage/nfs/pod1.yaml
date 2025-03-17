@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: use-tblogs-1
+  namespace: learn-k8
+spec:
+  volumes:
+    - name: tblogs-nfs-vol
+      persistentVolumeClaim:
+        claimName: claim-tblogs-nfs
+  containers:
+    - name: python-http-server
+      image: python:latest
+      command: ["python", "-m", "http.server"]
+      volumeMounts:
+        - mountPath: "/tblogs"
+          name: tblogs-nfs-vol

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: use-mldata-write
+  namespace: learn-k8
+spec:
+  volumes:
+    - name: mldata-disk-vol
+      persistentVolumeClaim:
+        claimName: claim-mldata-disk
+  containers:
+    - name: python-http-server
+      image: python:latest
+      command: ["python", "-m", "http.server"]
+      volumeMounts:
+        - mountPath: "/mldata"
+          name: mldata-disk-vol

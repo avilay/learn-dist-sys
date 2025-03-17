@@ -1,0 +1,39 @@
+scalar Date
+
+scalar Token
+
+type List {
+  id: ID!
+  userId: ID!
+  name: String!
+  createdOn: Date
+  updatedOn: Date
+  isActive: Boolean
+}
+
+type User {
+  id: ID!
+  name: String
+  email: String!
+  createdAt: Date
+}
+
+type LoginResponse {
+  isLoggedIn: Boolean!
+  token: String
+  errorMessage: String
+}
+
+type Query {
+  activeLists(nameFragment: String): [List]
+  allLists: [List]
+  list(id: ID): List
+  debugUsers: [User]
+  debugLists: [List]
+}
+
+type Mutation {
+  login(username: String!, password: String!): LoginResponse!
+}
+
+

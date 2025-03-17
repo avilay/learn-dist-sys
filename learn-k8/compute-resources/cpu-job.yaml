@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: long-lived-pytorch-cpu-job
+  namespace: learn-k8
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: long-lived-pytorch
+        image: pytorch/pytorch:latest
+        command: ["python",  "-m", "http.server"]
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "2000m"
+      restartPolicy: "Never"

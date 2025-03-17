@@ -1,0 +1,15 @@
+# This job will fail with prob 1. (the second param)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: matmul-job
+  namespace: learn-k8
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: matmul
+        image: avilay/matmul
+        command: ["python",  "matmul.py", "500", "1."]
+      restartPolicy: "Never"

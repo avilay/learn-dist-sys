@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: use-cmaps-vol-1
+  namespace: learn-k8
+spec:
+  volumes:
+    - name: app-config-vol
+      configMap:
+        name: app-config
+    - name: game-config-vol
+      configMap:
+        name: game-config
+  containers:
+    - name: python-http-server-2
+      image: python:slim
+      command: ["python", "-m", "http.server"]
+      volumeMounts:
+        - mountPath: "/etc/config/app"
+          name: app-config-vol
+        - mountPath: "/etc/config/game"
+          name: game-config-vol

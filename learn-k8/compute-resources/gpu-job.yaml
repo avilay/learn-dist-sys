@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: long-lived-pytorch-gpu-job
+  namespace: learn-k8
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - name: long-lived-pytorch-gpu
+        image: pytorch/pytorch:1.3-cuda10.1-cudnn7-runtime
+        command: ["python",  "-m", "http.server"]
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+      restartPolicy: "Never"

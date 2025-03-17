@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tblogs-nfs
+  namespace: learn-k8
+spec:
+  storageClassName: ""
+  capacity:
+    storage: 1T
+  accessModes:
+  - ReadWriteMany
+  nfs:
+    path: /tblogs
+    server: 10.63.211.26
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: claim-tblogs-nfs
+spec:
+  storageClassName: ""
+  volumeName: tblogs-nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1T

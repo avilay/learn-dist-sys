@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: helloweb-svc
+  namespace: learn-k8
+spec:
+  ports:
+    - port: 6006
+      targetPort: 6006
+  selector:
+    workload: helloweb
+  type: LoadBalancer
