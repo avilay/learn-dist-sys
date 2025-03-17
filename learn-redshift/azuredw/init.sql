@@ -3,7 +3,7 @@ CREATE MASTER KEY;
 CREATE DATABASE SCOPED CREDENTIAL rsmcreds
 WITH
 	IDENTITY = 'redshiftecomm',
-	Secret = 'NlHqWLUX+R+5Fnt9E+rv9gpFaNcxcD8BKWIapTHS1h/oYZ6WMr+/cnjr2+OrC9lH8xfskVmq4ymApXFqsoymlA==';
+	Secret = 'xxx';
 
 
 CREATE EXTERNAL DATA SOURCE azure_storage
