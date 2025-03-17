@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hellonode-deployment
+  namespace: learn-k8
+spec:
+  selector:
+    matchLabels:
+      run: frontend
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: frontend
+    spec:
+      containers:
+        - image: avilay/hellonode:latest
+          name: hello-node-container
+          ports:
+            - containerPort: 8080

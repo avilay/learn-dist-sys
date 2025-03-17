@@ -1,0 +1,16 @@
+# There is no network config here. By default the nginx Docker container will start listening
+# on port 80. The IP address will be the Pod's IP address that K8 master will allocate.
+# If deployed on GKE, this will be a private 10.* address. To see this nginx in action I'll
+# have to create a VM in the same VPC as the GKE and then go to http://<pod-ip>.
+# There is a ports section in the ContainerSpec, but that is merely informational.
+# It does not actually affect the networking setup.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-simple
+  labels:
+    app.kubernetes.io/version: '1.0.0'
+spec:
+  containers:
+    - name: nginx-simple
+      image: nginx

@@ -1,0 +1,13 @@
+[Unit]
+Description=uWSGI instance to serve app one
+After=network.target
+
+[Service]
+User=root
+Type=simple
+WorkingDirectory=/home/avilay/projects/bitbucket/learn/learn-dist-sys/learn-nginx/examples/app-one
+Environment="PATH=$PATH:/home/avilay/miniconda3/envs/web/bin"
+ExecStart=/home/avilay/miniconda3/envs/web/bin/uwsgi --ini app-one.ini
+
+[Install]
+WantedBy=default.target
