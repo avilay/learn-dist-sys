@@ -1,0 +1,14 @@
+body {
+  max-width: 700px;
+  margin: 0 auto;
+  color: dimgray;
+  margin-top: 5em;
+}
+
+a:link {
+  color: cadetblue;
+}
+
+a:hover, a:focus {
+  color: darkslategray;
+}

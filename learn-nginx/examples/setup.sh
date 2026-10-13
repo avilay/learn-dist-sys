@@ -16,14 +16,14 @@ sudo nginx -s reload
 
 cd ..
 
-# Setup and start app-one
+# Setup and start app-two
 cd app-two
 
-# Install app-one as a daemon and start it
+# Install app-two as a daemon and start it
 cp app-two.service /etc/systemd/system/
 systemctl start app-two
 
-# Configure nginx to serve app-one
+# Configure nginx to serve app-two
 echo "127.0.0.1 apptwo.mysite" | sudo tee -a /etc/hosts
 sudo cp app-two.conf /etc/nginx/conf.d
 sudo nginx -t

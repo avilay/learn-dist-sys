@@ -4,6 +4,7 @@ Refs:
   * [Beginners Guide](https://nginx.org/en/docs/beginners_guide.html)
 
 ## Start, Stop, and Reload
+
 ```shell
 # This will start nginx as a daemon
 nginx
@@ -16,6 +17,11 @@ nginx -s quit
 
 # To reload all the config files
 nginx -s reload
+
+# To test config
+nginx -T  # with config dump
+# or
+nginx -t  
 ```
 
 Default locations for logs (both access.log and error.log) is at `/var/log/nginx/`.
@@ -30,6 +36,8 @@ include /etc/nginx/sites-enabled/*;
 
 `sites-enabled` directory usually contains symbolic link to files in `sites-available` directory. I'll see a `sites-available/default` symlinked to `sites-enabled/default`. It creates a default server block (see below for what this means).
 
+> The `conf.d`, `sites-available` and `sites-enabled` are not actually default Ngnix settings and will not always be there. This is included in the Ubuntu/Debian conf, but is absent in Arch conf.
+
 Configs are the heart of nginx. There is a top level section called http which needs to have at least one sub-section called server (also referred to as "virtual servers" in some documentation).
 
 ### As a Content Web Server
@@ -43,15 +51,16 @@ http {
 
         location /traffic {
             root /www/data;
+            
             # First attempt to serve request as file, then
-			# as directory, then fall back to displaying a 404.
-			try_files $uri $uri/ =404;
+						# as directory, then fall back to displaying a 404.
+						try_files $uri $uri/ =404;
         }
 
         location /media {
-        	# First attempt to serve request as file, then
-			# as directory, then fall back to displaying a 404.
-			try_files $uri $uri/ =404;
+        	  # First attempt to serve request as file, then
+					  # as directory, then fall back to displaying a 404.
+					  try_files $uri $uri/ =404;
         }
     }
 }
@@ -76,8 +85,8 @@ http {
         server_name blogs.avilay.rocks
         location / {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-	        proxy_set_header Host $http_host;
-	        proxy_redirect off;
+	        	proxy_set_header Host $http_host;
+	        	proxy_redirect off;
             proxy_pass http://127.0.0.1:5000
         }
     }
